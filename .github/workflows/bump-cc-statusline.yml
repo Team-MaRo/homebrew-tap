@@ -1,0 +1,85 @@
+# One bump workflow per formula. To add another tool, copy this file as
+# bump-<formula>.yml and adjust SOURCE_REPO, the asset names, the formula path,
+# and the repository_dispatch event type.
+name: Bump cc-statusline formula
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "cc-statusline version to pin (blank = latest release)"
+        required: false
+  repository_dispatch:
+    types: [cc-statusline-release]
+
+permissions:
+  contents: write
+
+env:
+  SOURCE_REPO: Team-MaRo/cc-statusline
+  # While cc-statusline is private, GH_PAT must be a PAT with read access to the
+  # source repo. Once public, the built-in GITHUB_TOKEN is enough.
+  GH_TOKEN: ${{ secrets.GH_PAT || github.token }}
+
+jobs:
+  bump:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: Resolve version + asset digests
+        run: |
+          set -euo pipefail
+          VER="${{ github.event.inputs.version || github.event.client_payload.version || '' }}"
+          if [ -z "$VER" ]; then
+            VER="$(gh release view --repo "$SOURCE_REPO" --json tagName --jq .tagName)"
+          fi
+          echo "VER=$VER" >> "$GITHUB_ENV"
+
+          digest() {
+            gh api "repos/$SOURCE_REPO/releases/tags/$VER" \
+              --jq ".assets[] | select(.name==\"$1\") | .digest" | sed 's/^sha256://'
+          }
+          {
+            echo "SHA_DARWIN_ARM64=$(digest cc-statusline-darwin-arm64)"
+            echo "SHA_DARWIN_AMD64=$(digest cc-statusline-darwin-amd64)"
+            echo "SHA_LINUX_ARM64=$(digest cc-statusline-linux-arm64-gnu)"
+            echo "SHA_LINUX_AMD64=$(digest cc-statusline-linux-amd64-gnu)"
+          } >> "$GITHUB_ENV"
+
+      - name: Patch formula
+        run: |
+          set -euo pipefail
+          f="Formula/cc-statusline.rb"
+
+          # version
+          sed -i "s/^  version \".*\"/  version \"$VER\"/" "$f"
+
+          # sha256 on the line following each platform's url
+          set_sha() { # <asset> <sha>
+            awk -v asset="$1" -v sha="$2" '
+              $0 ~ ("/" asset "\"$") { print; want=1; next }
+              want && /sha256 "/ { sub(/"[0-9a-f]+"/, "\"" sha "\""); want=0 }
+              { print }
+            ' "$f" > "$f.tmp" && mv "$f.tmp" "$f"
+          }
+          set_sha cc-statusline-darwin-arm64    "$SHA_DARWIN_ARM64"
+          set_sha cc-statusline-darwin-amd64    "$SHA_DARWIN_AMD64"
+          set_sha cc-statusline-linux-arm64-gnu "$SHA_LINUX_ARM64"
+          set_sha cc-statusline-linux-amd64-gnu "$SHA_LINUX_AMD64"
+
+          echo "----- patched formula -----"
+          cat "$f"
+
+      - name: Commit
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "No changes."
+            exit 0
+          fi
+          git add Formula/cc-statusline.rb
+          git commit -m "feat: cc-statusline $VER"
+          git push
