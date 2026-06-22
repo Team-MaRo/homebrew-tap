@@ -8,6 +8,7 @@ on:
 
 jobs:
   test-bot:
+    name: Test formulae
     strategy:
       matrix:
         os: [ macos-15-intel, macos-26 ]
@@ -35,12 +36,27 @@ jobs:
           key: ${{ matrix.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
           restore-keys: ${{ matrix.os }}-rubygems-
 
-      - run: brew test-bot --only-cleanup-before
+      - name: Clean up before tests
+        run: brew test-bot --only-cleanup-before
 
-      - run: brew test-bot --only-setup
+      - name: Set up test-bot
+        run: brew test-bot --only-setup
 
-      - run: brew test-bot --only-tap-syntax
-      - run: brew test-bot --only-formulae
+      # Equivalent to `brew test-bot --only-tap-syntax`, but with the version
+      # audit skipped. test-bot hardcodes `brew audit --except=installed`, and
+      # our binary formulae keep an explicit `version` that Linux flags as
+      # "redundant with version scanned from URL" — yet it's required on macOS,
+      # where the versionless asset name (…-arm64) makes URL version-scanning
+      # wrong. `--except=version` drops only that false-positive check.
+      - name: Test tap syntax
+        run: |
+          TAP="$(echo "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]' | sed 's#/homebrew-#/#')"
+          brew style "$TAP"
+          brew readall --aliases --os=all --arch=all "$TAP"
+          brew audit --except=installed,version --tap="$TAP"
+
+      - name: Test formulae
+        run: brew test-bot --only-formulae
         if: github.event_name == 'pull_request'
 
       - name: Upload bottles as artifact

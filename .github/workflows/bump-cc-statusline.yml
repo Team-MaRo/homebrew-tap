@@ -23,9 +23,16 @@ env:
 
 jobs:
   bump:
+    name: Bump cc-statusline formula
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          # Persist the bot user's PAT so the later `git push` authenticates as the
+          # bot user (not github-actions[bot]). Ruleset bypass is evaluated against
+          # the pushing actor, so the bot user must be a bypass actor on master.
+          token: ${{ secrets.GH_PAT }}
 
       - name: Resolve version + asset digests
         run: |
@@ -71,11 +78,14 @@ jobs:
           echo "----- patched formula -----"
           cat "$f"
 
-      - name: Commit
+      - name: Configure git
         run: |
-          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Commit + push if changed
+        run: |
+          set -euo pipefail
           if git diff --quiet; then
             echo "No changes."
             exit 0
