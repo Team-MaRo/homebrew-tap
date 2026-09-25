@@ -1,6 +1,6 @@
 # Team-MaRo Tap
 
-[![License](https://img.shields.io/github/license/Team-MaRo/homebrew-tab)](LICENSE.txt)
+[![License](https://img.shields.io/github/license/Team-MaRo/homebrew-tap)](LICENSE.txt)
 [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.0-4baaaa)][code-of-conduct]
 
 ## How do I install these formulae?
