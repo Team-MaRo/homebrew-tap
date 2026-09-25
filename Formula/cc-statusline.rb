@@ -16,28 +16,28 @@
 class CcStatusline < Formula
   desc "Customizable Claude Code statusline with rate-limit curves and context bar"
   homepage "https://github.com/Team-MaRo/cc-statusline"
-  version "0.1.2"
+  version "0.2.0"
   license "MIT"
 
   on_macos do
     on_arm do
       url "https://github.com/Team-MaRo/cc-statusline/releases/download/#{version}/cc-statusline-darwin-arm64"
-      sha256 "e9208583c1d857dac0c04117f2dde9c0d8822bbdfdd7c56319cb15a7e523a528"
+      sha256 "b5769f3b6d47f755def7b7f35233136aa862ee3d1116fb5ba31bbfdb45160f28"
     end
     on_intel do
       url "https://github.com/Team-MaRo/cc-statusline/releases/download/#{version}/cc-statusline-darwin-amd64"
-      sha256 "e4686975ca07ef515fc7352f8d4a08c23a75032953c219ce6e91e5f3efbce5b6"
+      sha256 "a66f53cd9a9e55fc9bd2e48fc1b298765082f3fe88e4930837e95b7e40475488"
     end
   end
 
   on_linux do
     on_arm do
       url "https://github.com/Team-MaRo/cc-statusline/releases/download/#{version}/cc-statusline-linux-arm64-gnu"
-      sha256 "16df5c48a58a10973a47ae8b23a0ba85752c3cc23a3cc537722557fa8e5dfd69"
+      sha256 "f234e8d4bbd9363259095a20cb972dc0dac5e5900c1d7d20e611a66bae0f4972"
     end
     on_intel do
       url "https://github.com/Team-MaRo/cc-statusline/releases/download/#{version}/cc-statusline-linux-amd64-gnu"
-      sha256 "6ea2518ccf5fcbcf0c8ae2f06d05162423b6922bd1b5964d8238dfcb8ed31597"
+      sha256 "66546e95bb47b78b2d37da6b95611585dc4f797bd3b4e8543ba5281b94402812"
     end
   end
 
